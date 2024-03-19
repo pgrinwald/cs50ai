@@ -83,6 +83,8 @@ def main():
             movie = movies[path[i + 1][0]]["title"]
             print(f"{i + 1}: {person1} and {person2} starred in {movie}")
 
+## This is the brute force (non-recursive) method.
+#
 def shortest_path(source, target): # source and target are both id
     """
     Returns the shortest list of (movie_id, person_id) pairs
@@ -130,6 +132,9 @@ def shortest_path(source, target): # source and target are both id
                 frontier.add(child)
 
 
+## This is the recursive method.  Unfortunately with degrees > 2 or so
+## we run out for stack space :(
+#
 def shortest_path_recursive(source, target):
     """
     Returns the shortest list of (movie_id, person_id) pairs
