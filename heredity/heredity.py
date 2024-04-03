@@ -59,11 +59,6 @@ def main():
         }
         for person in people
     }
-    #LOOK 
-    #p = joint_probability(people, {"Harry" }, {"James", "Lily"}, {})
-    #p = joint_probability(people, {"Harry"}, {"James"}, {"James"})
-    #sys.exit(0)
-    #LOOK 
 
     # Loop over all sets of people who might have the trait
     names = set(people)
@@ -144,89 +139,7 @@ def joint_probability(people, one_gene, two_genes, have_trait):
         * everyone in set `have_trait` has the trait, and
         * everyone not in set` have_trait` does not have the trait.
     """
-    #print(f"\n*************\none_gene:{one_gene}, \ntwo_gene:{two_genes}, \nhave_trait: {have_trait}\n")
-    probabilities = []
-    no_genes = []
-    for person in people.keys():
-        if (person not in one_gene) and (person not in two_genes):
-            no_genes.append(person)
-
-    for person in people.keys():
-        mother = people[person]["mother"]
-        father = people[person]["father"]
-        motherprob = 0
-        fatherprob = 0
-
-        if mother in no_genes:
-            motherprob = PROBS["mutation"]
-        if mother in one_gene:
-            motherprob = 0.5
-        if mother in two_genes:
-            motherprob = 1 - PROBS["mutation"]
-
-        if father in no_genes:
-            fatherprob = PROBS["mutation"]
-        if father in one_gene:
-            fatherprob = 0.5 #- PROBS["mutation"]
-        if father in two_genes:
-            fatherprob = 1 - PROBS["mutation"]
-
-        if (mother == None) and (father == None):
-            if (person not in one_gene) and (person not in two_genes):
-                probabilities.append(PROBS["gene"][0])
-            if person in one_gene:
-                probabilities.append(PROBS["gene"][1])
-            if person in two_genes:
-                probabilities.append(PROBS["gene"][2])
-        else:
-            if person in no_genes:
-                probabilities.append((1 - motherprob) * (1 - fatherprob))
-
-            if person in one_gene:
-                probabilities.append(((1 - motherprob) * (fatherprob)) + ((1-fatherprob) * (motherprob)))
-
-            if person in two_genes:
-                probabilities.append((motherprob) * (fatherprob))
-
-        # PROBS for no trait
-        if person not in have_trait:
-            if person in no_genes:
-                probabilities.append(PROBS["trait"][0][False])
-            if person in one_gene:
-                probabilities.append(PROBS["trait"][1][False])
-            if person in two_genes:
-                probabilities.append(PROBS["trait"][2][False])
-
-        # PROBS for trait
-        if person in have_trait:
-            if person in no_genes:
-                probabilities.append(PROBS["trait"][0][True])
-            if person in one_gene:
-                probabilities.append(PROBS["trait"][1][True])
-            if person in two_genes:
-                probabilities.append(PROBS["trait"][2][True])
-
-    probabilities_multiplied = 1
-    for probability in probabilities:
-        probabilities_multiplied = probabilities_multiplied * probability
-
-    #print(f"Joint Probability: {probabilities_multiplied}")
-    return probabilities_multiplied
-
-
-def joint_probability_patg(people, one_gene, two_genes, have_trait):
-    """
-    Compute and return a joint probability.
-
-    The probability returned should be the probability that
-        * everyone in set `one_gene` has one copy of the gene, and
-        * everyone in set `two_genes` has two copies of the gene, and
-        * everyone not in `one_gene` or `two_gene` does not have the gene, and
-        * everyone in set `have_trait` has the trait, and
-        * everyone not in set` have_trait` does not have the trait.
-    """
-    #import pdb; pdb.set_trace()
-    PX = 1
+    Px = 1
     for person in people:
         jointprob = 1
         genecnt = 0
@@ -234,44 +147,52 @@ def joint_probability_patg(people, one_gene, two_genes, have_trait):
         if person in one_gene:
             # Has one copiy of the gene
             genecnt = 1
-        if person in two_genes:
+        elif person in two_genes:
             # Has two copies of the gene
             genecnt = 2
         else:
             # Has zero copies of the gene
             pass
 
+        # Calculate the probability of the pareents passing on the gene, factoring
+        # in the possible mutation.
         if people[person]['mother'] or people[person]['father']:
             fprob = 1
             mprob = 1
             if people[person]['mother']:
                 if people[person]['mother'] in one_gene:
-                    mprob *=  .05
-                if people[person]['mother'] in two_genes:
+                    mprob *=  0.5
+                elif people[person]['mother'] in two_genes:
                     mprob *=  (1 - PROBS["mutation"])
                 else:
                     mprob *=  PROBS["mutation"]
             if people[person]['father']:
                 if people[person]['father'] in one_gene:
-                    fprob *=  .05
-                if people[person]['father'] in two_genes:
+                    fprob *=  0.5
+                elif people[person]['father'] in two_genes:
                     fprob *=  (1 - PROBS["mutation"])
                 else:
                     fprob *=  PROBS["mutation"]
-            jointprob *= (((1 - fprob) * mprob )+ ((1 - mprob) * fprob))
+
+            if person in one_gene:
+                jointprob *= (((1 - fprob) * mprob) + ((1 - mprob) * fprob))
+            elif person in two_genes:
+                jointprob *= (fprob * mprob)
+            else:
+                jointprob *= ((1 - fprob) * (1 - mprob))
         else:
+            # Include the probability of the gene count.
             jointprob *= PROBS["gene"][genecnt]
 
+        # Include the probability of the gene trait.
         if person in have_trait:
             jointprob *= PROBS["trait"][genecnt][True]
         else:
             jointprob *= PROBS["trait"][genecnt][False]
             
-        print(f"{person}: {jointprob}")
-        PX *= jointprob
+        Px *= jointprob
 
-    print(f"Joint probability: {PX}")
-    return jointprob
+    return Px
 
 
 def update(probabilities, one_gene, two_genes, have_trait, p):
@@ -281,7 +202,20 @@ def update(probabilities, one_gene, two_genes, have_trait, p):
     Which value for each distribution is updated depends on whether
     the person is in `have_gene` and `have_trait`, respectively.
     """
-    raise NotImplementedError
+    for person in probabilities:
+        # Probabilities for genes
+        if (person not in one_gene) and (person not in two_genes):
+            probabilities[person]["gene"][0] += p
+        if person in one_gene:
+            probabilities[person]["gene"][1] += p
+        if person in two_genes:
+            probabilities[person]["gene"][2] += p
+
+        # Probabilities for traits
+        if person in have_trait:
+            probabilities[person]["trait"][True] += p
+        if person not in have_trait:
+            probabilities[person]["trait"][False] += p
 
 
 def normalize(probabilities):
@@ -289,7 +223,20 @@ def normalize(probabilities):
     Update `probabilities` such that each probability distribution
     is normalized (i.e., sums to 1, with relative proportions the same).
     """
-    raise NotImplementedError
+    for name in probabilities:
+        person = probabilities[name].copy()
+        total = sum([person["gene"][0], person["gene"][1], person["gene"][2]])
+
+        # Normalize genes
+        probabilities[name]["gene"][0] = person["gene"][0] / total
+        probabilities[name]["gene"][1] = person["gene"][1] / total
+        probabilities[name]["gene"][2] = person["gene"][2] / total
+
+        # Normalize traits
+        total = sum([person["trait"][True], person["trait"][False]])
+
+        probabilities[name]["trait"][True] = person["trait"][True] / total
+        probabilities[name]["trait"][False] = person["trait"][False] / total
 
 
 if __name__ == "__main__":
