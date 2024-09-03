@@ -1,0 +1,4 @@
+## Add source directories to PAYTHONPATH as you add unit tests:
+export PYTHONPATH=$PYTHONPATH:/home/pgrinwald/gitRepos/cs50ai/minesweeper
+
+export PYTHONPATH=$PYTHONPATH:/home/pgrinwald/gitRepos/cs50ai/minesweeper
